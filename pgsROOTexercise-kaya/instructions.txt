@@ -1,0 +1,195 @@
+In this exercise, we are given a ROOT file that contains data collected with the high-PT lepton triggers of a 
+simulated LHC detector. (Hint: High-PT lepton trigger => It is worth investigating the leptons in these events.)
+
+
+PART 1 - GETTING TO LEARN ABOUT THE DATA
+
+
+The goal of this part is to familiarize ourselves with the ntuple we have been given.  By the end of this part, 
+you should be able to understand and explain to others what sort of data is present in the given ROOT file and.  
+You should also be able to plot variables and interpret the histograms you get out.
+
+Open the file:
+  root -l pgs_events_Q1.root
+
+See what is inside:
+  .ls
+
+How many events are present in this file?
+  LHCO->GetEntries()
+
+// (const Long64_t)29997
+
+Plot some variables from the ROOT tree:
+  LHCO->Draw("Electron_size");
+  LHCO->Draw("Electron_size:Muon_size","","colz");
+
+Q: Are there more electrons or more muons in the events?
+// more electrons
+Q: What is the median number of electrons in the events? What about the muons?
+// median of electrons : (2+3)/2=2.5
+// median of muons     : 2
+
+Plot some more variables:
+  LHCO->Draw("Electron.PT");
+
+Q: Why is the number of entries (shown in the statistics box on the top right corner), different from the number 
+of entries (ie. the number you got earlier using the GetEntries() method)?
+//a1 // Because, here we consider particles of bigger sizes as well. In the previous one we had only electrons.
+// EDIT @a1 : 29997=number of events, 51719=total number of electrons as a result of 29997 events.
+
+Q: What is the mean number of electrons per event?
+//a2 // 29997/51719 = 0.579999613	
+// EDIT @a2 : 51719/29997 = 1.724
+
+Q: Do you see anything peculiar in the histogram?
+// Number of entries increases sharply in the region 0<Electron.PT<50. Number of entries decreases in the region 50<Electron.PT<200. Number of entries has a local maximum about Electron.PT=450
+
+Continue investigating the variables in the file:
+  LHCO->Draw("Electron.PT[0]");
+
+Q: How does this last histogram differ from the one we plotted just before?
+//a3 // the shape of this histogram is very similar to the previous one. But the values corresponding to Electron.PT values are almost halfed.
+// EDIT @a3 : Electron.PT[0] her olayýn birinci elektronu ile ilgili veri
+
+Q: What is the number of entries in this histogram? How does it compare with the number of events in the file? 
+If there is a difference, why? How could you estimate that difference?
+// 29155 entries in this histogram. ratio between number of events in the file and this one is : 29155 / 51719 = 0.563719. We can estimate the difference by inspecting the range of the vertical axis which is almost halfed.
+
+How about the distribution of the jets:
+  LHCO->Draw("Jet.PT");
+
+Q: Can you see the tail of the histogram? Why is it important to see the tails?
+// Yes. important to detect the last point starting from which we can ignore data.
+// edit : I thought I saw the tails, but when I set the log y scale, I noticed that I actually did not see the tails.
+
+Q: Go to log-scale (right click on the canvas, but in an area that is not covered by the histogram itself, and 
+then choose set log y). Can you now see the tails?
+// Yes.
+
+Q: How does the jet momentum histogram differ from the electron momentum histogram?
+// The histogram increases and decreases more sharply than the previous histogram. Also, the interval where sharp changes occur is almost half the size of the corresponding interval in the previous histogram.
+
+Go back to linear scale, this time from the command line. Then plot the pseudorapidity of jets and electrons:
+  gPad->SetLogy();
+  LHCO->Draw("Jet.Eta");
+  LHCO->Draw("Electron.Eta","","same");
+
+Q: What is pseudo-rapidity? (Look on wikipedia!) Why do we use eta instead of theta?
+// eta has an open interval, theta has an closed interval. It is more suitable to perform mappings to open intervals.
+// Also it is easier to get gaussian shape if eta is used.
+
+Q: What could be the reason for the difference between the jet and electron pseudo-rapidity distributions?  
+// Jet particles are ligher than electrons.
+
+Q: Can you plot the theta distributions? ( Hint: Draw() accepts C-functions. For example, to draw 2 times Eta, 
+you can do: LHCO->Draw("2*Jet.Eta"); )
+// eta = -ln( tan( theta/2 ) )	theta = 2 * arctan( exp(-eta) )
+// LHCO->Draw("2*atan(exp(-Jet.Eta))")
+
+Open a TBrowser:
+  TBrowser myb;
+
+And have a look at what other variables are present in the LHCO tree. (Click on ROOT Files, pgs_events_Q1.root, LHCO.)
+
+Q: Which of the variables do not ring a bell for you? (We can discuss them together afterwards.)
+// I used to have some basic knowledge about muon and tau, but now I don't know what they are. I never heard about jet.
+
+PART 2 - WRITING COMPUTER PROGRAMS TO ANALYZE DATA
+
+
+The goal of this part is to teach you how to write a quick analysis macro in ROOT.  We will make use of the 
+MakeClass() functionality that you learned in our previous exercise.
+
+  LHCO->MakeClass("exercise1");
+
+Have a look at exercise1.h, you will see how each of the variables that we have been browsing is now converted 
+into C-style arrays.  We will make use of these arrays.  You will also see some constant at the very beginning 
+of the file.
+
+Q: What is kMaxElectron set? What does this value signify?
+//const Int_t kMaxElectron = 4;
+// It signifies the size of an array in a leaf of the tree which holds data related to electrons.
+
+Start editing the exercise.C.  Right before the start of the exercise1::Loop() definition, add the following 
+piece of code, which will allow you to significantly improve the speed at which you can test your code:
+
+#ifdef __CINT__
+int exercise1() {
+  TFile *f = new TFile("pgs_events_Q1.root");
+  TTree *tree = (TTree*)gDirectory->Get("LHCO");
+  exercise1 t(tree); t.Loop(); return 0; }
+#endif
+
+Try to understand what this function does.  After its inclusion, you will be able to execute the code very 
+quickly by simply writing: .x exercise1.C.
+
+Now that we have a means of running things quickly, start modifying the Loop() method.  Add the following lines 
+of code to wherever is appropriate:
+
+   unsigned int n2eleevents = 0;
+...
+      if ( Electron_size != 2 ) continue;
+      n2eleevents++;
+...
+   cout << "\nNumber of events with exactly 2 electrons = " << n2eleevents << endl;
+
+Hint: The indentation of the lines can guide you.  The goal of these lines is to get the number of events that 
+have exactly 2 electrons.  Run your code.  You should get a number like 22235.
+
+Q: What is that "\n" used for?
+// "\n" = newline character, used to move to the next line
+
+Edit further.  Insert the following lines of code to the appropriate place:
+
+      TLorentzVector el1, el2;
+      el1.SetPtEtaPhiM( Electron_PT[0], Electron_Eta[0], Electron_Phi[0], 0.0005 ); // in GeV
+      el2.SetPtEtaPhiM( Electron_PT[1], Electron_Eta[1], Electron_Phi[1], 0.0005 ); // in GeV
+
+      TLorentzVector res = el1+el2;
+      cout << res.M() << "\t";
+
+Q: How many numbers will be printed when this code is run?  What is being printed?
+// 22235 numbers will be printed. The mass of the electron pair is printed.
+
+Q: Where can we find the description of TLorentzVector::SetPtEtaPhiM() ?
+//  location of TLorentzVector.h : root-53400/math/physics/inc
+
+Now define a TH1F histogram at the beginning of the Loop() method.  Instead of cout'ing the res.M() values, 
+instead fill them to the histogram.  In the last part of the Loop() method Draw() your histogram.
+
+Q: Do you see any peak(s)? What are they? Explain the features of the histogram that you see.
+// peaks around  : M = 80, 950, 1400
+
+
+Modify the code to include a new histogram that draws the same thing as the following interactive command that 
+we used earlier: LHCO->Draw("Electron.PT");
+
+Q: How do the features of the two histograms (electron pt and res.M()) compare?  Explain.
+//a4 // They have almost the same shape. If we consider 2 electrons  for each entry of the histogram Electron.PT then we see that even peaks occur in the same positions. This shows that momentum of the electrons is nearly equal to their energies. Therefore kinetic energy of the electrons is much bigger than their mass energy.
+// EDIT @a4 : Total energy of the electrons is nearly equal to mass energy. Therefore kinetic energy of the electrons is much less than their mass energy.
+
+Q: Could you modify the code such that only electrons of opposite charge are considered in the reconstruction?
+//       if(Electron_Charge[0]==Electron_Charge[1]) continue;
+
+PART 3 - FITTING
+
+
+Do a Gaussian fit to the structures that you see in the res.M() histogram.
+
+Q: What mean and rms values do you get?  Which particle(s) do these correspond to?  Did you discover new physics 
+or have you reinvented the wheel?
+/*
+Info in <TCanvas::MakeDefCanvas>:  created default TCanvas with name c1
+ FCN=10508.2 FROM MIGRAD    STATUS=CONVERGED     183 CALLS         184 TOTAL
+                     EDM=5.79956e-09    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                   STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  Constant     4.25394e+01   2.49561e+00   2.01927e-02  -9.45517e-05
+   2  Mean        -9.55753e+02   7.85984e+01   3.45963e-01  -7.98318e-06
+   3  Sigma        1.09228e+03   2.23646e+01   8.98907e-05  -3.15278e-02
+                               ERR DEF= 0.5
+*/
+// mean = 601.4  rms = 505.6
+// The mean value is 601.4 GeV. On web I looked up particles with energy on the order of 100 GeV. It was Higgs boson which has energy on that order.
+//
