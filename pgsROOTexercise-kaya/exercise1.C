@@ -43,15 +43,15 @@ void exercise1::Loop()
    if (fChain == 0) return;
 
    Long64_t nentries = fChain->GetEntriesFast();
-   //nentries = fChain->GetEntriesFast()*.1;		// data for first 10% of entries is to be taken
-   //nentries = fChain->GetEntriesFast()*.01;		// data for first 1%  of entries is to be taken
+   nentries = fChain->GetEntriesFast()*.1;		// data for first 10% of entries is to be taken
+   nentries = fChain->GetEntriesFast()*.01;		// data for first 1%  of entries is to be taken
 
   double minf=-0.5;
   double maxf=4000.5;
   int range=maxf-minf;
   TH1F *lorentzVectorMvalues = new TH1F("lorentzVectorMvalues", "Total mass of 2 electron events",
 				range,minf,maxf);
-
+  
    unsigned int n2eleevents = 0;
 
    Long64_t nbytes = 0, nb = 0;
@@ -75,16 +75,20 @@ void exercise1::Loop()
       el2.SetPtEtaPhiM( Electron_PT[1], Electron_Eta[1], Electron_Phi[1], 0.0005 ); // in GeV
 
       TLorentzVector res = el1+el2;
-      cout << res.M() << "\t";
+//      cout << res.M() << "\t";	ekrana yazdýrmak "ASUS netbook" ta çok zaman alýyor. Þimdilik ekrana yazdýrma.
 //      cout << res.M() << "\n";
     
       double tmp=res.M();
       lorentzVectorMvalues->Fill(tmp);
-	
    }
+   
+   lorentzVectorMvalues->SetBit(TH1F::kCanRebin);
+   //lorentzVectorMvalues->Rebin();
+   
+   
    cout << "\nNumber of events with exactly 2 electrons = " << n2eleevents << endl;
-
-////    TF1 *gfit = new TF1("Gaussian","gaus",minf,maxf); // Create the fit function
+      
+   ////    TF1 *gfit = new TF1("Gaussian","gaus",minf,maxf); // Create the fit function
      TF1 *gfit = new TF1("gfit","gaus",minf,maxf); // Create the fit function
 //     lorentzVectorMvalues->Fit("gfit","LL");	//Log-likelihood turu
 
@@ -246,10 +250,14 @@ void exercise1::Loop()
     
     // ZOOM IN AREA OF INTEREST
     TH1F *lorentzVectorMvaluesSubRange=lorentzVectorMvalues->Clone();
+    
+    //lorentzVectorMvaluesSubRange->SetBit(TH1F::kCanRebin);
+    //lorentzVectorMvaluesSubRange->Rebin();
+    
     lorentzVectorMvaluesSubRange->SetName("lorentzVectorMvaluesSubRange");
     lorentzVectorMvaluesSubRange->SetTitle(" with range of interest");
     lorentzVectorMvaluesSubRange->GetXaxis()->SetRange(min1,max1);
-     
+        
     TCanvas *c2 = new TCanvas();
     lorentzVectorMvaluesSubRange->Draw();
     leg_hist->Draw();		// "legend" etiketlerini çiz.
