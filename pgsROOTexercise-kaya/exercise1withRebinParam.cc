@@ -214,6 +214,17 @@ void exercise1::Loop(int rebinParam)
    lorentzVectorMvalues->Draw();
    //lorentzVectorMvalues->DrawClone();
    
+   TImage *resim = TImage::Create();
+   TString resimName=lorentzVectorMvalues->GetName();
+   resimName+="_";
+   resimName+=Form("%.1f",percentageOfEvents*100);
+   resimName+="%_rebinArg=";
+   resimName+=rebinParam;
+   resimName+=".png";
+   resim->FromPad(c11);
+   resim->WriteImage(resimName);
+   //c11->SaveAs(resimName);
+   
    /////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////////////////////////////
    
     TCanvas *c1 = new TCanvas();
@@ -244,8 +255,9 @@ void exercise1::Loop(int rebinParam)
     //lorentzVectorMvaluesSubRange->DrawClone();
     leg_hist->Draw();		// "legend" etiketlerini �iz.
     
-    //	A PaveStats is a PaveText to draw histogram statistics and fit parameters.
-    //	http://root.cern.ch/root/html/TPaveStats.html#TopOfPage
+    /*	A PaveStats is a PaveText to draw histogram statistics and fit parameters.
+    		http://root.cern.ch/root/html/TPaveStats.html#TopOfPage
+    */
     gPad->Update();
     TPaveStats *st = (TPaveStats*)lorentzVectorMvaluesSubRange->FindObject("stats");
     st->SetOptStat(2211);
@@ -262,14 +274,28 @@ To change the type of information for an histogram with an existing TPaveStats o
       st->SetOptStat(mode);
     * */
             
-    //Float_t x1a=0.0, y1a=0.9, x2a=0.4, y2a=1.0;
-    Double_t x1a=st->GetX1NDC(), y1a=0.0, x2a=st->GetX2NDC(), y2a=st->GetY1NDC();
-    y1a=y2a-.1;
-    TPaveText *pt2 = new TPaveText(x1a,y1a,x2a,y2a,"brNDC");
-    TString ptStr="# bins = \t";    ptStr+=numOfBins;    pt2->AddText(ptStr);
-    ptStr="rebin Parameter = \t";	ptStr+=rebinParam;    pt2->AddText(ptStr);
-    ptStr="% of events = \t";	ptStr+=Form("%.1f",percentageOfEvents*100);    pt2->AddText(ptStr);
-    pt2->Draw();
+    /*
+     * A PaveText is a Pave (see TPave) with text, lines or/and boxes inside. Line (and boxes) are positionned in the pave using coordinates relative to the pave
+     *		 http://root.cern.ch/root/html/TPaveText.html
+     * */
+    
+    // coordinates of "PaveText", put the "PaveText" instance right under "PaveStats".
+    Double_t x1_pt=st->GetX1NDC(), y1_pt=0.0, x2_pt=st->GetX2NDC(), y2_pt=st->GetY1NDC();
+    y1_pt=y2_pt-.1;
+    TPaveText *pt = new TPaveText(x1_pt,y1_pt,x2_pt,y2_pt,"brNDC");
+    TString ptStr="# bins = \t";    ptStr+=numOfBins;    pt->AddText(ptStr);
+    ptStr="rebin Parameter = \t";	ptStr+=rebinParam;    pt->AddText(ptStr);
+    ptStr="% of events = \t";	ptStr+=Form("%.1f",percentageOfEvents*100);    pt->AddText(ptStr);
+    pt->Draw();
+    
+    /*
+     TImage is an abstract interface to image processing library. It allows for the reading and writing of images in different formats, several image manipulations (scaling, tiling, merging, etc.) and displaying in pads.
+     http://root.cern.ch/root/html/TImage.html 
+     * */
+//    TImage *resim = TImage::Create();
+//    resim->FromPad(c2);
+//    resim->WriteImage("c2p.png");
+//    c2->SaveAs("c2saveas.png");
     
 
     TFile dosya("different_lorentzVectorMvalues_histos.root","UPDATE");
@@ -288,7 +314,7 @@ To change the type of information for an histogram with an existing TPaveStats o
  * What to put inside pavetext
  * 
  *  percentage of events
- *  current	number 0f bins
+ *  current	number of bins
  *  rebin parameter
  * 
  * */
