@@ -5,17 +5,17 @@
 #include <TCanvas.h>
 
 #ifdef __CINT__
-int exercise1() {
+int exercise1withRebinParam(int rebinParamforRebinFnc) {	//
   TFile *f = new TFile("pgs_events_Q1.root");
   TTree *tree = (TTree*)gDirectory->Get("LHCO");
 //
 .L exercise1.C;
 //
 //  exercise1 t(tree); t.Loop(); return 0; }
-  exercise1 t; t.Loop(); return 0; }
+exercise1 t; t.Loop(rebinParamforRebinFnc); return 0; }
 #endif
 
-void exercise1::Loop()
+void exercise1::Loop(int rebinParam)
 {
 //   In a ROOT session, you can do:
 //      Root > .L exercise1.C
@@ -42,17 +42,25 @@ void exercise1::Loop()
 //by  b_branchname->GetEntry(ientry); //read only this branch
    if (fChain == 0) return;
 
-   Long64_t nentries = fChain->GetEntriesFast();
-//   nentries = fChain->GetEntriesFast()*.1;		// data for first 10% of entries is to be taken
-   nentries = fChain->GetEntriesFast()*.01;		// data for first 1%  of entries is to be taken
+   Long64_t nentriesAll = fChain->GetEntriesFast();
+   double percentageOfEvents=.01;
+   nentries = fChain->GetEntriesFast()*percentageOfEvents;		// data for first 'percentageOfEvents'*100 of entries is to be taken
 
   double minf=-0.5;
   double maxf=4000.5;
   int range=maxf-minf;
-  TH1F *lorentzVectorMvalues = new TH1F("lorentzVectorMvalues", "Total mass of 2 electron events",
-				range,minf,maxf);
+  TString titleOfTH1F="Total mass of 2 electron events (";
+  titleOfTH1F+="first ";
+  titleOfTH1F+=Form("%.1f",percentageOfEvents*100);
+  titleOfTH1F+="% of ";
+  titleOfTH1F+=nentriesAll;
+  titleOfTH1F+="entries is studied)";
+//  TH1F *lorentzVectorMvalues = new TH1F("lorentzVectorMvalues", "Total mass of 2 electron events",
+//				range,minf,maxf);
+    TH1F *lorentzVectorMvalues = new TH1F("lorentzVectorMvalues", titleOfTH1F,
+  				range,minf,maxf);
   
-     unsigned int n2eleevents = 0;
+  unsigned int n2eleevents = 0;
 
    Long64_t nbytes = 0, nb = 0;
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
@@ -82,14 +90,18 @@ void exercise1::Loop()
       lorentzVectorMvalues->Fill(tmp);
    }
 
-   int rebinParam=12;		// number of bins to be merged when "Rebin()" is called.
-   lorentzVectorMvalues->Rebin(rebinParam);
+   if(rebinParam !=NULL && rebinParam>1)
+   {
+	   lorentzVectorMvalues->Rebin(rebinParam);		// rebinParam = number of bins to be merged when "Rebin()" is called.
+   }
    int numOfBins=lorentzVectorMvalues->GetNbinsX();
    
    
    cout << "\nNumber of events with exactly 2 electrons = " << n2eleevents << endl;
    cout << "\nNumber of bins in 'lorentzVectorMvalues' = " << numOfBins << endl;
-      
+   
+   TCanvas *c11=new TCanvas();
+   
    ////    TF1 *gfit = new TF1("Gaussian","gaus",minf,maxf); // Create the fit function
      TF1 *gfit = new TF1("gfit","gaus",minf,maxf); // Create the fit function
 //     lorentzVectorMvalues->Fit("gfit","LL");	//Log-likelihood turu
@@ -199,6 +211,9 @@ void exercise1::Loop()
    leg_hist->AddEntry(fitnoise2total,"gaus+pol2","l");
    leg_hist->Draw();
       
+   lorentzVectorMvalues->Draw();
+   //lorentzVectorMvalues->DrawClone();
+   
    /////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////////////////////////////
    
     TCanvas *c1 = new TCanvas();
@@ -206,6 +221,11 @@ void exercise1::Loop()
 
    c1->cd(1);
    lorentzVectorMvalues->Draw();
+/*   When a displayed
+   histogram is deleted, its image is automatically removed from the pad. To create a copy of the
+   histogram when drawing it, you can use TH1::DrawClone(). This will clone the histogram
+   and allow you to change and delete the original one without affecting the clone. */
+//   lorentzVectorMvalues->DrawClone();
 
     c1->cd(2);    
     LHCO->Draw("Electron.PT");
@@ -218,8 +238,57 @@ void exercise1::Loop()
     //lorentzVectorMvaluesSubRange->GetXaxis()->SetRange(min1,max1);
     lorentzVectorMvaluesSubRange->GetXaxis()->SetRange(min1/rebinParam,max1/rebinParam);	// if "Rebin()" is called, then new range must be specified accordingly.
     
-    
     TCanvas *c2 = new TCanvas();
+    
     lorentzVectorMvaluesSubRange->Draw();
+    //lorentzVectorMvaluesSubRange->DrawClone();
     leg_hist->Draw();		// "legend" etiketlerini �iz.
+    
+    //	A PaveStats is a PaveText to draw histogram statistics and fit parameters.
+    //	http://root.cern.ch/root/html/TPaveStats.html#TopOfPage
+    gPad->Update();
+    TPaveStats *st = (TPaveStats*)lorentzVectorMvaluesSubRange->FindObject("stats");
+    st->SetOptStat(2211);
+    /*
+     But in a script file the painting should be forced using gPad->Update() in order to make sure the statistics box is created:
+
+      h->Draw();
+      gPad->Update();
+      TPaveStats *st = (TPaveStats*)h->FindObject("stats");
+
+Without gPad->Update() the line h->FindObject("stats") returns a null pointer.
+To change the type of information for an histogram with an existing TPaveStats one should do:
+
+      st->SetOptStat(mode);
+    * */
+            
+    //Float_t x1a=0.0, y1a=0.9, x2a=0.4, y2a=1.0;
+    Double_t x1a=st->GetX1NDC(), y1a=0.0, x2a=st->GetX2NDC(), y2a=st->GetY1NDC();
+    y1a=y2a-.1;
+    TPaveText *pt2 = new TPaveText(x1a,y1a,x2a,y2a,"brNDC");
+    TString ptStr="# bins = \t";    ptStr+=numOfBins;    pt2->AddText(ptStr);
+    ptStr="rebin Parameter = \t";	ptStr+=rebinParam;    pt2->AddText(ptStr);
+    ptStr="% of events = \t";	ptStr+=Form("%.1f",percentageOfEvents*100);    pt2->AddText(ptStr);
+    pt2->Draw();
+    
+
+    TFile dosya("different_lorentzVectorMvalues_histos.root","UPDATE");
+    TString asd="lvm";
+    asd+=rebinParam;
+    lorentzVectorMvalues->SetName(asd);
+//    lorentzVectorMvalues->SetName("lvm"+rebinParam);
+//    lorentzVectorMvalues->SetNameTitle("lvm"+rebinParam);
+    lorentzVectorMvalues->Write();
+    lorentzVectorMvaluesSubRange->Write();
+    dosya.Close();
 }
+
+
+/*
+ * What to put inside pavetext
+ * 
+ *  percentage of events
+ *  current	number 0f bins
+ *  rebin parameter
+ * 
+ * */
