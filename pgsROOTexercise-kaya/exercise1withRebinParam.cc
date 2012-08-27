@@ -46,6 +46,17 @@ void exercise1::Loop(int rebinParam)
 	double percentageOfEvents=.01;
 	nentries = fChain->GetEntriesFast()*percentageOfEvents;		// data for first 'percentageOfEvents'*100 of entries is to be taken
 
+	// VARIABLES TO BE USED IN ADVANCE
+	TPaveStats *st;			//	http://root.cern.ch/root/html/TPaveStats.html
+	TPaveText *pt; 			//	http://root.cern.ch/root/html/TPaveText.html
+	TImage *resim;			//	http://root.cern.ch/root/html/TImage.html	
+	TLegend *leg_hist;		//	http://root.cern.ch/root/html/TLegend.html
+	TCanvas *cnvs1,*cnvs2,*cnvs3;			//	http://root.cern.ch/root/html/TCanvas.html
+	TString tmpStr, tmpStrName;			//	http://root.cern.ch/root/html/TString.html
+	
+	int numOfBins,	numOfBinsSubrange;
+	Double_t	x1,x2,y1,y2;
+	
 	double minf=-0.5;
 	double maxf=4000.5;
 	int range=maxf-minf;
@@ -94,88 +105,103 @@ void exercise1::Loop(int rebinParam)
 	{
 		lorentzVectorMvalues->Rebin(rebinParam);		// rebinParam = number of bins to be merged when "Rebin()" is called.
 	}
-	int numOfBins=lorentzVectorMvalues->GetNbinsX();
+	numOfBins=lorentzVectorMvalues->GetNbinsX();
 
 
 	cout << "\nNumber of events with exactly 2 electrons = " << n2eleevents << endl;
 	cout << "\nNumber of bins in 'lorentzVectorMvalues' = " << numOfBins << endl;
 
-	TCanvas *c11=new TCanvas();
-
 	////    TF1 *gfit = new TF1("Gaussian","gaus",minf,maxf); // Create the fit function
-	TF1 *gfit = new TF1("gfit","gaus",minf,maxf); // Create the fit function
+	//TF1 *gfit = new TF1("gfit","gaus",minf,maxf); // Create the fit function
 	//     lorentzVectorMvalues->Fit("gfit","LL");	//Log-likelihood turu
 
 	/////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////////////////////////////
 	///// 8.7.2012
 	double min1=850;
-	double max1=1050;
+	double max1=1050;	// fit functions will work in range [min1,max1]
+	//	3 FIT FUNCTIONS : GAUSSIAN, POLY OF DEG.1, POLY OF DEG.2
 	TF1 *fit1=new TF1("fit1","gaus",min1,max1); // Create the fit function
 	TF1 *fitpol1=new TF1("fitpol1","pol1",min1,max1); // Create the fit function 
 	TF1 *fitpol2=new TF1("fitpol2","pol2",min1,max1); // Create the fit function
 
 	//////////////////////////////////////////////////////////////////////////////
-	// Define the parameter array for the total function
+	//	COMPOSITE FIT FUNCTION : GAUSSIAN + POLYNOMIAL OF DEGREE 1
+	// Define the parameter array for the total function "fitnoise1total"
 	Double_t par1[5];
-	//   TF1 *fitnoise1gaus=new TF1("fitnoise1gaus","gaus",min1,max1); 
+ 
+	// fit functions for "fitnoise1total"
 	TF1 *fitnoise1gaus=new TF1("fitnoise1gaus","gaus",min1,max1);
 	TF1 *fitnoise1pol=new TF1("fitnoise1pol","pol1",min1,max1);
 	TF1 *fitnoise1total=new TF1("fitnoise1total","gaus(0)+pol1(3)",min1,max1);
 
 	cout<<endl<<"*****\t"<<fitnoise1total->GetName()<<"\t*****";
+	
 	cout << endl << "\t*****\t" << fitnoise1gaus->GetName() << " 'fit' fonksiyonu ile ilgili DATA" <<"\t*****\t" << endl;
-	//cout << "-----" << "fitnoise1gaus" << "-----" << endl;
-	lorentzVectorMvalues->Fit("fitnoise1gaus","R+");
-	cout << endl <<"\t*****\t" << fitnoise1pol->GetName() << " 'fit' fonksiyonu ile ilgili DATA" <<"\t*****\t" << endl;
-	lorentzVectorMvalues->Fit("fitnoise1pol","R+");
+	lorentzVectorMvalues->Fit("fitnoise1gaus","0R+");
 
+	cout << endl <<"\t*****\t" << fitnoise1pol->GetName() << " 'fit' fonksiyonu ile ilgili DATA" <<"\t*****\t" << endl;
+	lorentzVectorMvalues->Fit("fitnoise1pol","0R+");
+
+	// GET AND SET PARAMETERS OF "fitnoise1total"
 	fitnoise1gaus->GetParameters(&par1[0]);
 	fitnoise1pol->GetParameters(&par1[3]);
 	fitnoise1total->SetParameters(&par1[0]);
-
-	fitnoise1total->SetLineColor(2);
-	cout << endl << "\t*****\t" << fitnoise1total->GetName() << " 'fit' fonksiyonu ile ilgili DATA" <<"\t*****\t" << endl;
-	lorentzVectorMvalues->Fit("fitnoise1total","R+");
-
+	
 	//////////////////////////////////////////////////////////////////////////////
-	// Define the parameter array for the total function
+	//	COMPOSITE FIT FUNCTION : GAUSSIAN + POLYNOMIAL OF DEGREE 2
+	// Define the parameter array for the total function "fitnoise2total"
 	Double_t par2[6];
+	
+	// fit functions for "fitnoise2total"
 	TF1 *fitnoise2gaus=new TF1("fitnoise2gaus","gaus",min1,max1);
 	TF1 *fitnoise2pol=new TF1("fitnoise2pol","pol2",min1,max1);
 	TF1 *fitnoise2total=new TF1("fitnoise2total","gaus(0)+pol2(3)",min1,max1);
 
 	cout<<endl<<"*****\t"<<fitnoise2total->GetName()<<"\t*****";
+	
 	cout << endl << "\t*****\t" << fitnoise2gaus->GetName() << " 'fit' fonksiyonu ile ilgili DATA" <<"\t*****\t" << endl;
-	lorentzVectorMvalues->Fit("fitnoise2gaus","R+");
+	lorentzVectorMvalues->Fit("fitnoise2gaus","0R+");
+	
 	cout << endl << "\t*****\t" << fitnoise2pol->GetName() << " 'fit' fonksiyonu ile ilgili DATA" <<"\t*****\t" << endl;
-	lorentzVectorMvalues->Fit("fitnoise2pol","R+");
+	lorentzVectorMvalues->Fit("fitnoise2pol","0R+");
 
+	// GET AND SET PARAMETERS OF "fitnoise1total"
 	fitnoise2gaus->GetParameters(&par2[0]);
 	fitnoise2pol->GetParameters(&par2[3]);
 	fitnoise2total->SetParameters(&par2[0]);
-
-	fitnoise2total->SetLineColor(3);
-	cout << endl << "\t*****\t" << fitnoise2total->GetName() << " 'fit' fonksiyonu ile ilgili DATA" <<"\t*****\t" << endl;
-	lorentzVectorMvalues->Fit("fitnoise2total","R+");
-
+	
 	//////////////////////////////////////////////////////////////////////////////   
 
-
+	// SET COLOR OF FIT FUNCTIONS
 	fit1->SetLineColor(1);
 	fitpol1->SetLineColor(6);
 	fitpol2->SetLineColor(7);
 	fitnoise1total->SetLineColor(2);
 	fitnoise2total->SetLineColor(3);
+	
 	/*
-   1	black
-   2	red
-   3	light green
-   4	blue
-   5	yellow
-   6	magenta
-   7	cyan
-   8	green*/
-
+	   1	black
+	   2	red
+	   3	light green
+	   4	blue
+	   5	yellow
+	   6	magenta
+	   7	cyan
+	   8	green
+	 */
+	
+/*
+ * 	"0" Do not plot the result of the fit. By default the fitted function is drawn unless the option "N"
+above is specified
+	"R" Use the range specified in the function range
+	"+" Add this new fitted function to the list of fitted functions (by default, the previous function is
+deleted and only the last one is kept)
+*/
+	
+	//////////////////	 CANVAS #1	//////////////////
+	cnvs1=new TCanvas();
+	
+	// PERFORM FIT OPERATIONS
 	cout << endl << "\t*****\t" << fit1->GetName() << " 'fit' fonksiyonu ile ilgili DATA" <<"\t*****\t" << endl;
 	lorentzVectorMvalues->Fit("fit1","R+");	
 
@@ -183,13 +209,174 @@ void exercise1::Loop(int rebinParam)
 	lorentzVectorMvalues->Fit("fitpol1","R+");
 
 	cout << endl << "\t*****\t" << fitpol2->GetName() << " 'fit' fonksiyonu ile ilgili DATA" <<"\t*****\t" << endl;
-	lorentzVectorMvalues->Fit("fitpol2","R+");	
+	lorentzVectorMvalues->Fit("fitpol2","R+");
+	
+	cout << endl << "\t*****\t" << fitnoise1total->GetName() << " 'fit' fonksiyonu ile ilgili DATA" <<"\t*****\t" << endl;
+	lorentzVectorMvalues->Fit("fitnoise1total","R+");
+	
+	cout << endl << "\t*****\t" << fitnoise2total->GetName() << " 'fit' fonksiyonu ile ilgili DATA" <<"\t*****\t" << endl;
+	lorentzVectorMvalues->Fit("fitnoise2total","R+");
 
-	// legend ekle.
-	leg_hist = new TLegend(0.7,0.4,0.95,0.6);
+	lorentzVectorMvalues->Draw();
+	/*   When a displayed
+   histogram is deleted, its image is automatically removed from the pad. To create a copy of the
+   histogram when drawing it, you can use TH1::DrawClone(). This will clone the histogram
+   and allow you to change and delete the original one without affecting the clone. */
+	//lorentzVectorMvalues->DrawClone();
+	
+	
+	/*	A PaveStats is a PaveText to draw histogram statistics and fit parameters.
+    		http://root.cern.ch/root/html/TPaveStats.html	 */
+	gPad->Update();
+	st = (TPaveStats*)lorentzVectorMvalues->FindObject("stats");
+	st->SetOptStat(2211);
+	/*
+     But in a script file the painting should be forced using gPad->Update() in order to make sure the statistics box is created:
+      h->Draw();
+      gPad->Update();
+      TPaveStats *st = (TPaveStats*)h->FindObject("stats");
 
-	// add the values of parameters to the legend
+		Without gPad->Update() the line h->FindObject("stats") returns a null pointer.
+		To change the type of information for an histogram with an existing TPaveStats one should do:
 
+      st->SetOptStat(mode);
+	 */
+	
+	// PUT PAVETEXT ONTO CANVAS, IT WILL BE UNDER PAVESTATS
+	/* A PaveText is a Pave (see TPave) with text, lines or/and boxes inside. Line (and boxes) are positionned in the pave using coordinates relative to the pave
+	 *		 http://root.cern.ch/root/html/TPaveText.html	 */
+	x2=st->GetX2NDC(); y2=st->GetY1NDC(); x1=st->GetX1NDC(); y1=0.0;	// coordinates of "PaveText". put the "PaveText" instance right under "PaveStats".
+	y1=y2-.1;		// vertical length of "PaveText" is 0.1 NDC.
+	pt = new TPaveText(x1,y1,x2,y2,"brNDC");
+	tmpStr="# bins = \t";    			tmpStr+=numOfBins;  				  			pt->AddText(tmpStr);
+	tmpStr="rebin Parameter = \t";		tmpStr+=rebinParam;			  					pt->AddText(tmpStr);
+	tmpStr="% of events = \t";			tmpStr+=Form("%.1f",percentageOfEvents*100);    pt->AddText(tmpStr);
+	pt->Draw();
+
+	// PUT LEGEND ONTO CANVAS,	IT WILL BE UNDER PAVETEXT
+	/*
+	This class displays a legend box (TPaveText) containing several legend entries. Each legend entry is made of a reference to a ROOT object, a text label and an option specifying which graphical attributes (marker/line/fill) should be displayed.
+
+	The following example shows how to create a legend. In this example the legend contains a histogram, a function and a graph. The histogram is put in the legend using its reference pointer whereas the graph and the function are added using their names. Note that, because TGraph contructors do not have the TGraph name as parameter, the graph name should be specified using the SetName method.
+
+	When an object is added by name, a scan is performed on the list of objects contained in the current pad (gPad) and also in the possible TMultiGraph and THStack present in the pad. If a matching name is found, the coresponding object is added in the legend using its pointer. 
+	 */
+	gPad->Update();
+	x2=pt->GetX2NDC();	y2=pt->GetY1NDC();	x1=pt->GetX1NDC()-0.1;	y1=y2-.2;
+	leg_hist = new TLegend(x1,y1,x2,y2);
+	leg_hist->AddEntry(fit1,"gaus = p0*exp(-0.5*((x-p1)/p2)^2)","l");
+	leg_hist->AddEntry(fitpol1,"pol1 = p0 + p1*x","l");
+	leg_hist->AddEntry(fitpol2,"pol2 = p0 + p1*x + p2*x^2","l");
+	leg_hist->AddEntry(fitnoise1total,"gaus+pol1 ","l");
+	leg_hist->AddEntry(fitnoise2total,"gaus+pol2","l");
+	leg_hist->Draw();
+
+	// IMAGE FILE FOR CANVAS #1, NAMELY CANVAS CONTAINING "lorentzVectorMvalues"
+	/*
+    TImage is an abstract interface to image processing library. It allows for the reading and writing of images in different formats, several image manipulations (scaling, tiling, merging, etc.) and displaying in pads.
+    http://root.cern.ch/root/html/TImage.html 
+	 */
+	resim = TImage::Create();
+	tmpStr=lorentzVectorMvalues->GetName();
+	tmpStr+="_";
+	tmpStr+=Form("%.1f",percentageOfEvents*100);
+	tmpStr+="%_rebinArg=";
+	tmpStr+=rebinParam;
+	tmpStr+=".png";
+	resim->FromPad(cnvs1);
+	resim->WriteImage(tmpStr);
+	//cnvs1->SaveAs(resimName);
+	//////////////////	 DONE WITH	CANVAS #1	//////////////////
+
+	//////////////////	 CANVAS #2	//////////////////
+	cnvs2 = new TCanvas();
+	cnvs2->Divide(2);		// divide canvas into 2.
+
+	cnvs2->cd(1);
+	lorentzVectorMvalues->Draw();
+
+	cnvs2->cd(2);    
+	LHCO->Draw("Electron.PT");
+	//////////////////	 DONE WITH	CANVAS #2	//////////////////
+	
+	// ZOOM IN AREA OF INTEREST, NAMELY [min1,max1]
+	//Like for any other ROOT object derived from TObject, one can use the Clone() function. This makes an identical copy of the original histogram including all associated errors and functions
+	TH1F *lorentzVectorMvaluesSubRange=lorentzVectorMvalues->Clone();	
+	
+	lorentzVectorMvaluesSubRange->SetName("lorentzVectorMvaluesSubRange");
+	tmpStr="with range of interest : (";
+	tmpStr+=min1;	tmpStr+=",";	
+	tmpStr+=max1;	tmpStr+=")";
+	lorentzVectorMvaluesSubRange->SetTitle(tmpStr);
+	//lorentzVectorMvaluesSubRange->GetXaxis()->SetRange(min1,max1);
+	lorentzVectorMvaluesSubRange->GetXaxis()->SetRange(min1/rebinParam,max1/rebinParam);	// if "Rebin()" is called, then new range must be specified accordingly.
+   
+	numOfBinsSubrange=lorentzVectorMvaluesSubRange->GetNbinsX();
+
+	//////////////////	 CANVAS #3	//////////////////
+	cnvs3 = new TCanvas();
+	lorentzVectorMvaluesSubRange->Draw();
+	
+	//	PAVETEXT FOR CANVAS #3
+	pt->Clear();
+	tmpStr="# bins = \t";    			tmpStr+=numOfBinsSubrange;			  			pt->AddText(tmpStr);
+	tmpStr="rebin Parameter = \t";		tmpStr+=rebinParam;			  					pt->AddText(tmpStr);
+	tmpStr="% of events = \t";			tmpStr+=Form("%.1f",percentageOfEvents*100);    pt->AddText(tmpStr);
+	pt->Draw();				// draw pavetext
+	//	LEGEND FOR CANVAS #3
+	leg_hist->Draw();		// "legend" etiketlerini �iz.
+
+	// IMAGE FILE FOR CANVAS #3, NAMELY CANVAS CONTAINING "lorentzVectorMvaluesSubRange"
+	tmpStr=lorentzVectorMvaluesSubRange->GetName();
+	tmpStr+="(";		tmpStr+=min1;	tmpStr+=",";	tmpStr+=max1;	tmpStr+=")_";
+	tmpStr+=Form("%.1f",percentageOfEvents*100);
+	tmpStr+="%_rebinArg=";	tmpStr+=rebinParam;
+	tmpStr+=".png";
+	resim->FromPad(cnvs3);
+	resim->WriteImage(tmpStr);
+
+	//////////////////	 DONE WITH	CANVAS #3	//////////////////
+	
+	//////////////////	 .ROOT FILE	//////////////////
+	TFile *dosya=new TFile("total_mass_of_2_el_events.root","UPDATE");
+	
+	// write canvases
+	cnvs1->Write(lorentzVectorMvalues->GetName());
+	cnvs2->Write("divided into 2");
+	cnvs3->Write(lorentzVectorMvaluesSubRange->GetName());
+	
+	// write "lorentzVectorMvalues"
+	tmpStr=Form("%.1f",percentageOfEvents*100);	
+	tmpStr+="%_rebinArg=";
+	tmpStr+=rebinParam;
+	tmpStr+="_lvm";
+	lorentzVectorMvalues->SetName(tmpStr);
+	lorentzVectorMvalues->Write();
+	
+	// write "lorentzVectorMvaluesSubRange"
+	tmpStr=Form("%.1f",percentageOfEvents*100);
+	tmpStr+="%_rebinArg=";
+	tmpStr+=rebinParam;
+	tmpStr+="_(";		tmpStr+=min1;	tmpStr+=",";	tmpStr+=max1;	tmpStr+=")";
+	tmpStr+="_lvmSubRange";
+	lorentzVectorMvaluesSubRange->SetName(tmpStr);
+	lorentzVectorMvaluesSubRange->Write();
+			
+	dosya->Close();
+}
+
+
+/*
+ * What to put inside pavetext
+ * 
+ *  percentage of events
+ *  current	number of bins
+ *  rebin parameter
+ * 
+ * */
+
+/*
+	// add the values of parameters to the legend, quited
 	TString strGetParams="with ";		// equivalent : TString strGetParams("with");
 	for (int i=0;i<3;i++)
 	{
@@ -202,126 +389,6 @@ void exercise1::Loop(int rebinParam)
 		//strGetParams+="p"+i+" = ";		// must concatenate one by one ( b�yle bir kod �al��m�yor, teker teker eklemek gerekiyor.) 
 		//strGetParams<<"p"<<i+" = ";//"+par1[i]+" , ";  // must concatenate one by one ( b�yle bir kod �al��m�yor, teker teker eklemek gerekiyor.)
 	}
-
-	leg_hist->AddEntry(fit1,"gaus = p0*exp(-0.5*((x-p1)/p2)^2)","l");
-	leg_hist->AddEntry(fitpol1,"pol1 = p0 + p1*x","l");
-	leg_hist->AddEntry(fitpol2,"pol2 = p0 + p1*x + p2*x^2","l");
+	
 	//leg_hist->AddEntry(fitnoise1total,"gaus+pol1 "+strGetParams,"l");	// given up, makes the legend unnecessarily wide
-	leg_hist->AddEntry(fitnoise1total,"gaus+pol1 ","l");
-	leg_hist->AddEntry(fitnoise2total,"gaus+pol2","l");
-	leg_hist->Draw();
-
-	lorentzVectorMvalues->Draw();
-	//lorentzVectorMvalues->DrawClone();
-
-	/*
-    TImage is an abstract interface to image processing library. It allows for the reading and writing of images in different formats, several image manipulations (scaling, tiling, merging, etc.) and displaying in pads.
-    http://root.cern.ch/root/html/TImage.html 
-	 */
-	TImage *resim = TImage::Create();
-	TString resimName=lorentzVectorMvalues->GetName();
-	resimName+="_";
-	resimName+=Form("%.1f",percentageOfEvents*100);
-	resimName+="%_rebinArg=";
-	resimName+=rebinParam;
-	resimName+=".png";
-	resim->FromPad(c11);
-	resim->WriteImage(resimName);
-	//c11->SaveAs(resimName);
-
-	/////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////////////////////////////
-
-	TCanvas *c1 = new TCanvas();
-	c1->Divide(2);
-
-	c1->cd(1);
-	lorentzVectorMvalues->Draw();
-	/*   When a displayed
-   histogram is deleted, its image is automatically removed from the pad. To create a copy of the
-   histogram when drawing it, you can use TH1::DrawClone(). This will clone the histogram
-   and allow you to change and delete the original one without affecting the clone. */
-	//   lorentzVectorMvalues->DrawClone();
-
-	c1->cd(2);    
-	LHCO->Draw("Electron.PT");
-
-	// ZOOM IN AREA OF INTEREST
-	TH1F *lorentzVectorMvaluesSubRange=lorentzVectorMvalues->Clone();
-
-	lorentzVectorMvaluesSubRange->SetName("lorentzVectorMvaluesSubRange");
-	TString lvmSubrangeTitle="with range of interest : (";
-	lvmSubrangeTitle+=min1;	lvmSubrangeTitle+=",";	
-	lvmSubrangeTitle+=max1;	lvmSubrangeTitle+=")";
-	lorentzVectorMvaluesSubRange->SetTitle(lvmSubrangeTitle);
-	//lorentzVectorMvaluesSubRange->GetXaxis()->SetRange(min1,max1);
-	lorentzVectorMvaluesSubRange->GetXaxis()->SetRange(min1/rebinParam,max1/rebinParam);	// if "Rebin()" is called, then new range must be specified accordingly.
-	int numOfBinsSubrange=lorentzVectorMvaluesSubRange->GetNbinsX();
-
-	TCanvas *c2 = new TCanvas();
-
-	lorentzVectorMvaluesSubRange->Draw();
-	//lorentzVectorMvaluesSubRange->DrawClone();
-	leg_hist->Draw();		// "legend" etiketlerini �iz.
-
-	/*	A PaveStats is a PaveText to draw histogram statistics and fit parameters.
-    		http://root.cern.ch/root/html/TPaveStats.html#TopOfPage
-	 */
-	gPad->Update();
-	TPaveStats *st = (TPaveStats*)lorentzVectorMvaluesSubRange->FindObject("stats");
-	st->SetOptStat(2211);
-	/*
-     But in a script file the painting should be forced using gPad->Update() in order to make sure the statistics box is created:
-
-      h->Draw();
-      gPad->Update();
-      TPaveStats *st = (TPaveStats*)h->FindObject("stats");
-
-Without gPad->Update() the line h->FindObject("stats") returns a null pointer.
-To change the type of information for an histogram with an existing TPaveStats one should do:
-
-      st->SetOptStat(mode);
-	 * */
-
-	/*
-	 * A PaveText is a Pave (see TPave) with text, lines or/and boxes inside. Line (and boxes) are positionned in the pave using coordinates relative to the pave
-	 *		 http://root.cern.ch/root/html/TPaveText.html
-	 * */
-	Double_t x1_pt=st->GetX1NDC(), y1_pt=0.0, x2_pt=st->GetX2NDC(), y2_pt=st->GetY1NDC();	// coordinates of "PaveText". put the "PaveText" instance right under "PaveStats".
-	y1_pt=y2_pt-.1;
-	TPaveText *pt = new TPaveText(x1_pt,y1_pt,x2_pt,y2_pt,"brNDC");
-	TString ptStr="# bins = \t";    ptStr+=numOfBinsSubrange;    pt->AddText(ptStr);
-	ptStr="rebin Parameter = \t";	ptStr+=rebinParam;    pt->AddText(ptStr);
-	ptStr="% of events = \t";	ptStr+=Form("%.1f",percentageOfEvents*100);    pt->AddText(ptStr);
-	pt->Draw();
-
-	// IMAGE FILE FOR "lorentzVectorMvaluesSubRange" CANVAS
-	resimName=lorentzVectorMvaluesSubRange->GetName();
-	resimName+="(";		resimName+=min1;	resimName+=",";	resimName+=max1;	
-	resimName+=")_";
-	resimName+=Form("%.1f",percentageOfEvents*100);
-	resimName+="%_rebinArg=";
-	resimName+=rebinParam;
-	resimName+=".png";
-	resim->FromPad(c2);
-	resim->WriteImage(resimName);
-
-	TFile dosya("different_lorentzVectorMvalues_histos.root","UPDATE");
-	TString asd="lvm";
-	asd+=rebinParam;
-	lorentzVectorMvalues->SetName(asd);
-	//    lorentzVectorMvalues->SetName("lvm"+rebinParam);
-	//    lorentzVectorMvalues->SetNameTitle("lvm"+rebinParam);
-	lorentzVectorMvalues->Write();
-	lorentzVectorMvaluesSubRange->Write();
-	dosya.Close();
-}
-
-
-/*
- * What to put inside pavetext
- * 
- *  percentage of events
- *  current	number of bins
- *  rebin parameter
- * 
- * */
+*/
