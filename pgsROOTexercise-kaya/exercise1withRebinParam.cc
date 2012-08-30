@@ -343,9 +343,13 @@ deleted and only the last one is kept)
 	// prepare the proper directory
 	//	http://root.cern.ch/drupal/content/subdirectories-and-navigation
 	tmpStr=Form("%g",percentageOfEvents*100);	//http://stackoverflow.com/questions/9628645/use-printf-to-format-floats-without-decimal-places-if-only-trailing-0s
-	tmpStr+="%_of_events_with_rebinArg=";	tmpStr+=rebinParam;
-	dosya->mkdir(tmpStr);		
-	dosya->cd(tmpStr);		// change to proper directory			
+	tmpStr+="%_of_events_is_studied";
+	gDirectory->mkdir(tmpStr);			// gDirectory = current directory 
+	gDirectory->cd(tmpStr);				// change to proper directory
+	
+	tmpStr="rebinParam=";	tmpStr+=rebinParam;
+	gDirectory->mkdir(tmpStr);		
+	gDirectory->cd(tmpStr);		
 	
 	// write canvases
 	cnvs1->Write(lorentzVectorMvalues->GetName());
