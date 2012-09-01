@@ -4,8 +4,8 @@
 
 int exercise1LoopOverRebinParams(int startRebinParam, int endRebinParam, int increment, double percentageParam) {	//
 	
-	TString tmpStr=Form("%.2f",percentageParam*100);
-	tmpStr+="_total_mass_of_2_el_events.root"
+	TString tmpStr=Form("%g",percentageParam*100);
+	tmpStr+="%_total_mass_of_2_el_events.root";
 	TFile dosya(tmpStr,"RECREATE");	//  create a new file, if the file already exists it will be overwritten.
 	dosya.Close();
 	

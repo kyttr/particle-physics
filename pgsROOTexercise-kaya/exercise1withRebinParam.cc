@@ -297,8 +297,8 @@ void exercise1::Loop(int rebinParam, double percentageOfEvents)
 	tmpStr+="%_rebinArg=";
 	tmpStr+=rebinParam;
 	tmpStr+=".png";
-	resim->FromPad(cnvs1);
-	resim->WriteImage(tmpStr);
+//	resim->FromPad(cnvs1);
+//	resim->WriteImage(tmpStr);
 	//cnvs1->SaveAs(resimName);
 	//////////////////	 DONE WITH	CANVAS #1	//////////////////
 
@@ -346,13 +346,16 @@ void exercise1::Loop(int rebinParam, double percentageOfEvents)
 	tmpStr+=Form("%.1f",percentageOfEvents*100);
 	tmpStr+="%_rebinArg=";	tmpStr+=rebinParam;
 	tmpStr+=".png";
-	resim->FromPad(cnvs3);
-	resim->WriteImage(tmpStr);
+//	resim->FromPad(cnvs3);
+//	resim->WriteImage(tmpStr);
 
 	//////////////////	 DONE WITH	CANVAS #3	//////////////////
 	
 	//////////////////	 .ROOT FILE		//////////////////
-	TFile *dosya=new TFile("total_mass_of_2_el_events.root","UPDATE");
+	tmpStr=Form("%g",percentageOfEvents*100);
+	tmpStr+="%_total_mass_of_2_el_events.root";
+	//tmpStr+="total_mass_of_2_el_events.root";
+	TFile *dosya=new TFile(tmpStr,"UPDATE");
 	
 	// prepare the proper directory
 	//	http://root.cern.ch/drupal/content/subdirectories-and-navigation
