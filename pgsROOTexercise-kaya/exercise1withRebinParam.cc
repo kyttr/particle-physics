@@ -5,17 +5,31 @@
 #include <TCanvas.h>
 
 #ifdef __CINT__
-int exercise1withRebinParam(int rebinParamforRebinFnc) {	//
+
+int exercise1withRebinParam(int rebinParamforRebinFnc, double percentageOfEvents) {	//
 	TFile *f = new TFile("pgs_events_Q1.root");
 	TTree *tree = (TTree*)gDirectory->Get("LHCO");
 	//
 	.L exercise1.C;
 	//
 	//  exercise1 t(tree); t.Loop(); return 0; }
-	exercise1 t; t.Loop(rebinParamforRebinFnc); return 0; }
+	exercise1 t; t.Loop(rebinParamforRebinFnc,percentageOfEvents); return 0; }
+
+int exercise1withRebinParam(int rebinParamforRebinFnc) {
+	exercise1withRebinParam(rebinParamforRebinFnc,1);
+}
+
 #endif
 
 void exercise1::Loop(int rebinParam)
+{
+	Loop(rebinParam, 1);	// if no percentageOfEvents is given, then assume percentageOfEvents is 100%.
+}
+
+/*
+ * percentageOfEvents must be in range [0,1].
+ */
+void exercise1::Loop(int rebinParam, double percentageOfEvents)
 {
 	//   In a ROOT session, you can do:
 	//      Root > .L exercise1.C
@@ -43,7 +57,7 @@ void exercise1::Loop(int rebinParam)
 	if (fChain == 0) return;
 
 	Long64_t nentriesAll = fChain->GetEntriesFast();
-	double percentageOfEvents=.01;
+	//double percentageOfEvents=.01;
 	nentries = fChain->GetEntriesFast()*percentageOfEvents;		// data for first 'percentageOfEvents'*100 of entries is to be taken
 
 	// VARIABLES TO BE USED IN ADVANCE
